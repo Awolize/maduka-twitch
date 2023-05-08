@@ -22,3 +22,28 @@ export const rewardSchema = z.object({
     redemptions_redeemed_current_stream: z.null(),
     cooldown_expires_at: z.null(),
 });
+export const rewardsSchema = z.array(rewardSchema);
+
+export const GetChannelRewardsRedemptionsSchema = z.object({
+    data: z.array(
+        z.object({
+            broadcaster_name: z.string(),
+            broadcaster_login: z.string(),
+            broadcaster_id: z.string(),
+            id: z.string(),
+            user_login: z.string(),
+            user_id: z.string(),
+            user_name: z.string(),
+            user_input: z.string(),
+            status: z.string(),
+            redeemed_at: z.string(),
+            reward: z.object({
+                id: z.string(),
+                title: z.string(),
+                prompt: z.string(),
+                cost: z.number(),
+            }),
+        })
+    ),
+    pagination: z.object({ cursor: z.string() }),
+});
