@@ -129,9 +129,13 @@ const addCustomReward = async ({
         );
 
         const data = await response.json();
+        console.log(data);
+
         return data.data[0].id;
     } catch (error) {
         console.log("Failed to add the reward. Please try again.");
+        console.log(error);
+
         return false;
     }
 };
