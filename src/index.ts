@@ -121,6 +121,7 @@ const addCustomReward = async ({
             {
                 method: "POST",
                 headers: {
+                    "Content-Type": "application/json",
                     "Client-ID": api.client_id,
                     Authorization: `Bearer ${api.access_token}`,
                 },
