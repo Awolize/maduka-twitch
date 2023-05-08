@@ -66,7 +66,7 @@ const rewardsSchema = z.array(rewardSchema);
 /** Gets the channel stream key for a user. */
 export const getChannelRewards = async (
     options: GetChannelRewardsOptions
-): Promise<typeof rewardsSchema> => {
+): Promise<z.infer<typeof rewardsSchema>> => {
     const query = "?" + parseOptions(options);
     const endpoint = `/channel_points/custom_rewards${query}`;
 
@@ -88,16 +88,42 @@ export interface GetChannelRewardsRedemptionsOptions {
     first?: string;
 }
 
+export const GetChannelRewardsRedemptionsSchema = z.object({
+    data: z.array(
+        z.object({
+            broadcaster_name: z.string(),
+            broadcaster_login: z.string(),
+            broadcaster_id: z.string(),
+            id: z.string(),
+            user_login: z.string(),
+            user_id: z.string(),
+            user_name: z.string(),
+            user_input: z.string(),
+            status: z.string(),
+            redeemed_at: z.string(),
+            reward: z.object({
+                id: z.string(),
+                title: z.string(),
+                prompt: z.string(),
+                cost: z.number(),
+            }),
+        })
+    ),
+    pagination: z.object({ cursor: z.string() }),
+});
+
 /** Gets the channel stream key for a user. */
 export const getChannelRewardsRedemptions = async (
     options: GetChannelRewardsRedemptionsOptions
-): Promise<any> => {
+): Promise<z.infer<typeof GetChannelRewardsRedemptionsSchema>> => {
     const query = "?" + parseOptions(options);
     const endpoint = `/channel_points/custom_rewards/redemptions${query}`;
 
     const result = await customGet(endpoint);
 
-    return result;
+    const valid = GetChannelRewardsRedemptionsSchema.parse(result);
+
+    return valid ? result : null;
 };
 
 const customRewardBody = {
@@ -139,35 +165,134 @@ const addCustomReward = async ({
     }
 };
 
+const fulfillRewards = async (
+    broadcaster_id,
+    rewardId,
+    redemptionIds: string[],
+    status: "FULFILLED" | "CANCELED"
+) => {
+    // if empty, just cancel
+    if (redemptionIds.length == 0) {
+        return;
+    }
+
+    // transforms the list of redemptionIds to redemptionIds=id for the API call
+    redemptionIds = redemptionIds.map((v) => `id=${v}`);
+
+    try {
+        await fetch(
+            `https://api.twitch.tv/helix/channel_points/custom_rewards/redemptions?broadcaster_id=${broadcaster_id}&reward_id=${rewardId}&${redemptionIds.join(
+                "&"
+            )}`,
+            {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Client-ID": api.client_id,
+                    Authorization: `Bearer ${api.access_token}`,
+                },
+                body: JSON.stringify({ status: status }),
+            }
+        );
+    } catch (error) {
+        console.log(error);
+    }
+};
+
 // --------------------------------------------------------
 
-server.start();
+class Main {
+    async init() {
+        server.start();
+    }
 
-await setup();
+    async checkRedemptions(rewardId) {
+        if (!currentUser) {
+            return;
+        }
+        // const rewardId = await addCustomReward({ broadcaster_id: result1.id });
 
-const result1 = await api.getCurrentUser();
-console.log(result1);
+        console.log("rewardId:", rewardId);
 
-if (result1) {
-    // const rewardId = await addCustomReward({ broadcaster_id: result1.id });
-    const rewardId = "08a5d17f-5161-4e56-99ea-2a05fa50f423";
-    console.log("rewardId:", rewardId);
+        // const result2 = await getChannelRewards({ broadcaster_id: result1.id });
+        // console.log(result2);
 
-    // const result2 = await getChannelRewards({ broadcaster_id: result1.id });
-    // console.log(result2);
+        const { data: redemptions } = await getChannelRewardsRedemptions({
+            broadcaster_id: currentUser.id,
+            reward_id: rewardId,
+            status: "UNFULFILLED",
+        });
 
-    const result2 = await getChannelRewardsRedemptions({
-        broadcaster_id: result1.id,
-        reward_id: rewardId,
-        status: "UNFULFILLED",
-    });
+        console.log("new redemptions:", redemptions.length);
 
-    console.log(JSON.stringify(result2));
-    console.log(result2);
-    console.log(result2?.length);
+        if (!redemptions) {
+            return;
+        }
+
+        // let successfulRedemptions: string[] = [];
+        // let failedRedemptions: string[] = [];
+        //
+        // for (let redemption of redemptions) {
+        //     // can't follow yourself :)
+        //     if (redemption.broadcaster_id == redemption.user_id) {
+        //         failedRedemptions.push(redemption.id);
+        //         continue;
+        //     }
+        //     // if failed, add to the failed redemptions
+        //     if (
+        //         (await followUser(
+        //             redemption.broadcaster_id,
+        //             redemption.user_id
+        //         )) == false
+        //     ) {
+        //         failedRedemptions.push(redemption.id);
+        //         continue;
+        //     }
+        //     // otherwise, add to the successful redemption list
+        //     successfulRedemptions.push(redemption.id);
+        // }
+
+        // do this in parallel
+        await Promise.all([
+            fulfillRewards(
+                currentUser.id,
+                rewardId,
+                redemptions.map((el) => el.id),
+                "FULFILLED"
+            ),
+            // fulfillRewards(failedRedemptions, "CANCELED"),
+        ]);
+    }
+
+    async destructor() {
+        console.log("access_token:", api.access_token);
+        console.log("refresh_token:", api.refresh_token);
+
+        if (server) {
+            server.stop();
+        }
+    }
 }
 
-console.log("access_token:", api.access_token);
-console.log("refresh_token:", api.refresh_token);
+const specificRewardId = "08a5d17f-5161-4e56-99ea-2a05fa50f423";
+const currentUser = await api.getCurrentUser();
+const mainInstance = new Main();
 
-server.stop();
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+try {
+    await mainInstance.init();
+    while (true) {
+        try {
+            await mainInstance.checkRedemptions(specificRewardId);
+            await delay(15000); // Delay for 15 seconds
+        } catch (error) {
+            console.error("An error occurred:", error);
+            break;
+        }
+    }
+} catch (error) {
+    console.error("An error occurred:", error);
+} finally {
+    await mainInstance.destructor();
+}
