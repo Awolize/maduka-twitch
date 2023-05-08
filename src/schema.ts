@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const schema = z.object({
+export const rewardSchema = z.object({
     broadcaster_name: z.string(),
     broadcaster_login: z.string(),
     broadcaster_id: z.string(),
