@@ -105,8 +105,6 @@ const customRewardBody = {
     prompt: "Follows the requesting user!",
     cost: 10 * 1000 * 1000,
     is_enabled: true,
-    is_global_cooldown_enabled: true,
-    global_cooldown_seconds: 10 * 60,
 };
 
 // if the custom reward doesn't exist, creates it. returns true if successful, false if not
@@ -151,7 +149,8 @@ const result1 = await api.getCurrentUser();
 console.log(result1);
 
 if (result1) {
-    const rewardId = await addCustomReward({ broadcaster_id: result1.id });
+    // const rewardId = await addCustomReward({ broadcaster_id: result1.id });
+    const rewardId = "08a5d17f-5161-4e56-99ea-2a05fa50f423";
     console.log("rewardId:", rewardId);
 
     // const result2 = await getChannelRewards({ broadcaster_id: result1.id });
@@ -162,8 +161,9 @@ if (result1) {
         reward_id: rewardId,
         status: "UNFULFILLED",
     });
-    console.log(result2);
 
+    console.log(JSON.stringify(result2));
+    console.log(result2);
     console.log(result2?.length);
 }
 
