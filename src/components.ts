@@ -1,5 +1,6 @@
 // --------------------------------------------------------
 
+import { z } from "zod";
 import { customGet } from "./index.js";
 import { GetChannelRewardsRedemptionsSchema, rewardsSchema } from "./schema.js";
 import { parseOptions } from "./utils.js";
@@ -58,11 +59,14 @@ export const customRewardBody = {
 };
 
 // if the custom reward doesn't exist, creates it. returns true if successful, false if not
-export const addCustomReward = async ({
-    broadcaster_id,
-}: {
-    broadcaster_id: string;
-}) => {
+export const addCustomReward = async (
+    api,
+    {
+        broadcaster_id,
+    }: {
+        broadcaster_id: string;
+    }
+) => {
     try {
         const response = await fetch(
             `https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=${broadcaster_id}`,
