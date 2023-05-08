@@ -70,7 +70,7 @@ export const getChannelRewards = async (
     const endpoint = `/channel_points/custom_rewards${query}`;
 
     const result = await customGet(endpoint);
-    console.log(result);
+    // console.log(result);
 
     return result.data[0];
 };
@@ -85,7 +85,10 @@ console.log(result1);
 
 if (result1) {
     const result2 = await getChannelRewards({ broadcaster_id: result1.id });
-    console.log(result2);
+    //console.log(result2);
 }
+
+console.log("access_token:", api.access_token);
+console.log("refresh_token:", api.refresh_token);
 
 server.stop();
