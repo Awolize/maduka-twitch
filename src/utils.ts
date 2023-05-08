@@ -7,10 +7,10 @@ export function parseArrayToQueryString(
     key: string,
     arr: readonly unknown[]
 ): string {
-    const list = Array.isArray(arr) ? arr : [arr]
-    const result = list.map((value) => `${key}=${value}`).join('&')
+    const list = Array.isArray(arr) ? arr : [arr];
+    const result = list.map((value) => `${key}=${value}`).join("&");
 
-    return result
+    return result;
 }
 
 /**
@@ -18,16 +18,16 @@ export function parseArrayToQueryString(
  * @param {Object} options - The options to parse.
  */
 export function parseOptions<T>(options: T): string {
-    let query = ''
+    let query = "";
 
     for (const key in options) {
-        const value = options[key]
+        const value = options[key];
 
-        if (value === null || value === undefined) continue
+        if (value === null || value === undefined) continue;
 
-        if (Array.isArray(value)) query += parseArrayToQueryString(key, value)
-        else query += `${key}=${value}&`
+        if (Array.isArray(value)) query += parseArrayToQueryString(key, value);
+        else query += `${key}=${value}&`;
     }
 
-    return query.replace(/&$/, '')
+    return query.replace(/&$/, "");
 }
