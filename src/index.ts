@@ -100,23 +100,61 @@ export const getChannelRewardsRedemptions = async (
     return result;
 };
 
+const customRewardBody = {
+    title: "Sample: Follow me!",
+    prompt: "Follows the requesting user!",
+    cost: 10 * 1000 * 1000,
+    is_enabled: true,
+    is_global_cooldown_enabled: true,
+    global_cooldown_seconds: 10 * 60,
+};
+
+// if the custom reward doesn't exist, creates it. returns true if successful, false if not
+const addCustomReward = async ({
+    broadcaster_id,
+}: {
+    broadcaster_id: string;
+}) => {
+    try {
+        const response = await fetch(
+            `https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=${broadcaster_id}`,
+            {
+                method: "POST",
+                headers: {
+                    "Client-ID": api.client_id,
+                    Authorization: `Bearer ${api.access_token}`,
+                },
+                body: JSON.stringify(customRewardBody),
+            }
+        );
+
+        const data = await response.json();
+        return data.data[0].id;
+    } catch (error) {
+        console.log("Failed to add the reward. Please try again.");
+        return false;
+    }
+};
+
 // --------------------------------------------------------
 
 server.start();
 
 await setup();
-console.log("getUser");
 
 const result1 = await api.getCurrentUser();
 console.log(result1);
 
 if (result1) {
+    const rewardId = await addCustomReward({ broadcaster_id: result1.id });
+    console.log("rewardId:", rewardId);
+
     // const result2 = await getChannelRewards({ broadcaster_id: result1.id });
     // console.log(result2);
 
     const result2 = await getChannelRewardsRedemptions({
         broadcaster_id: result1.id,
-        reward_id: "a42c5bec-4a78-4c32-9b36-f963d48b12b4",
+        reward_id: rewardId,
         status: "UNFULFILLED",
     });
     console.log(result2);
