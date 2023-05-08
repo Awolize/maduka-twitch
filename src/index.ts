@@ -201,6 +201,8 @@ const fulfillRewards = async (
 
 // --------------------------------------------------------
 
+console.log("123");
+
 class Main {
     async init() {
         server.start();
