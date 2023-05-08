@@ -51,7 +51,6 @@ export const getChannelRewardsRedemptions = async (
     try {
         GetChannelRewardsRedemptionsSchema.parse(result);
     } catch (error) {
-        console.log("No new redemptions");
         return { data: [] };
     }
 
