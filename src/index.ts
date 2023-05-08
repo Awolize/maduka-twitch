@@ -86,8 +86,6 @@ export const fulfillRewards = async (
 
 // --------------------------------------------------------
 
-console.log("123");
-
 const init = async () => {
     server.start();
 };
@@ -111,15 +109,12 @@ const checkRedemptions = async (rewardId) => {
     }
 
     // do this in parallel
-    await Promise.all([
-        fulfillRewards(
-            currentUser.id,
-            rewardId,
-            redemptions.map((el) => el.id),
-            "FULFILLED"
-        ),
-        // fulfillRewards(failedRedemptions, "CANCELED"),
-    ]);
+    await fulfillRewards(
+        currentUser.id,
+        rewardId,
+        redemptions.map((el) => el.id),
+        "FULFILLED"
+    );
 };
 
 const destructor = async () => {

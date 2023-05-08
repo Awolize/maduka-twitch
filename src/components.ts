@@ -40,15 +40,22 @@ export interface GetChannelRewardsRedemptionsOptions {
 /** Gets the channel stream key for a user. */
 export const getChannelRewardsRedemptions = async (
     options: GetChannelRewardsRedemptionsOptions
-): Promise<z.infer<typeof GetChannelRewardsRedemptionsSchema>> => {
+): Promise<
+    z.infer<typeof GetChannelRewardsRedemptionsSchema> | { data: [] }
+> => {
     const query = "?" + parseOptions(options);
     const endpoint = `/channel_points/custom_rewards/redemptions${query}`;
 
     const result = await customGet(endpoint);
 
-    const valid = GetChannelRewardsRedemptionsSchema.parse(result);
+    try {
+        GetChannelRewardsRedemptionsSchema.parse(result);
+    } catch (error) {
+        console.log("no new redemptions or something else went wrong:", error);
+        return { data: [] };
+    }
 
-    return valid ? result : null;
+    return result;
 };
 
 export const customRewardBody = {
